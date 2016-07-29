@@ -1,6 +1,6 @@
 import numpy as np
 
-from graph import Graph, VertexXYT, EdgeXYT
+from graph import Graph, VertexXYT, XYTConstraint
 from mmath import MultiVariateGaussian
 
 
@@ -35,7 +35,7 @@ def load_graph_g2o(filename):
                                [ f(7), f( 9), f(10) ],
                                [ f(8), f(10), f(11) ] ])
                 g = MultiVariateGaussian(xyt, np.linalg.inv(C))
-                edges.append( EdgeXYT(v_out, v_in, g) )
+                edges.append( XYTConstraint(v_out, v_in, g) )
 
             else:
                 msg = "Unknown edge or vertex type %s in line %d" % (d[0], linenum)
@@ -66,11 +66,11 @@ def load_graph_toro(filename):
                 v_out, v_in = vertices[ndx_out], vertices[ndx_in]
 
                 xyt = np.array([ f( 3), f( 4), f( 5) ])
-                C = np.array([ [ f( 6), f( 7), f(10) ],
+                P = np.array([ [ f( 6), f( 7), f(10) ],
                                [ f( 7), f( 8), f(11) ],
                                [ f(10), f(11), f( 9) ] ])
-                g = MultiVariateGaussian(xyt, C)
-                edges.append( EdgeXYT(v_out, v_in, g) )
+                g = MultiVariateGaussian(xyt, P)
+                edges.append( XYTConstraint(v_out, v_in, g) )
 
             else:
                 msg = "Unknown edge or vertex type %s in line %d" % (d[0], linenum)

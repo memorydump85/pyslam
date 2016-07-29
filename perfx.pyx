@@ -44,7 +44,7 @@ cpdef xyt_residual(
     return np.array(r)
 
 
-cpdef EdgeXYT_jacobians(
+cpdef XYTConstraint_jacobians(
         np.ndarray[np.float64_t, ndim=1] xyt_a,
         np.ndarray[np.float64_t, ndim=1] xyt_b ):
 
@@ -73,4 +73,3 @@ cpdef EdgeXYT_jacobians(
                0.,   0., -1. ]
 
     return Ja, Jb
-

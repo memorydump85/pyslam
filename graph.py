@@ -5,7 +5,7 @@ from scipy.sparse import dok_matrix
 from mmath import *
 
 import pyximport; pyximport.install()
-from perfx import xyt_residual, EdgeXYT_jacobians
+from perfx import xyt_residual, XYTConstraint_jacobians
 
 
 
@@ -23,14 +23,17 @@ def _matrix_as_ijv(M, i0=0, j0=0):
 
 
 #--------------------------------------
-class EdgeXYT(object):
+class XYTConstraint(object):
 #--------------------------------------
     """
-    If `T` is the relative transformation between `v_out` and `v_in`, this edge
-    constrains `xyt` to be distributed according to the distribution `g`.
+    Constrain the transformation between two `VertexXYT`s.
 
-    Here `xyt` is the rigidbody transformation `T` expressed using its
-    parameters of x: displacement, y: displacement and theta: rotation
+    `xyt` is the rigidbody transformation `T`, between the vertices `v_out` and
+    `v_in`, expressed using its parameters of x: displacement, y: displacement
+    and theta: rotation
+
+    This constraint constrains the `xyt` between `v_out` and `v_in` to be
+    distributed according to a specified gaussian distribution.
     """
     def __init__(self, v_out, v_in, gaussian):
         self._vx = [ v_out, v_in ]
@@ -95,7 +98,7 @@ class EdgeXYT(object):
         #         sa,  -ca,  0.,
         #         0.,   0., -1. ]
 
-        Ja, Jb = EdgeXYT_jacobians(self._vx[0].state, self._vx[1].state)
+        Ja, Jb = XYTConstraint_jacobians(self._vx[0].state, self._vx[1].state)
 
         # J = np.vstack(( Ja, Jb ))
         # J = np.array([
@@ -119,11 +122,11 @@ class EdgeXYT(object):
 
 
 #--------------------------------------
-class AnchorEdge(object):
+class AnchorConstraint(object):
 #--------------------------------------
     """
     Anchors the `xyt` parameters of a vertex `v` to conform to a gaussian
-    distribution. The most likely used of this edge type is to anchor the `xyt`
+    distribution. The most common use of this edge type is to anchor the `xyt`
     of the first node in a SLAM graph to a fixed value. This prevents the graph
     solution from drifting arbitrarily.
     """
@@ -197,6 +200,6 @@ class Graph(object):
 
         mu = v0.state.copy()
         P = 1000. * np.eye(len(mu))
-        self._anchor = AnchorEdge(v0, MultiVariateGaussian(mu, P))
+        self._anchor = AnchorConstraint(v0, MultiVariateGaussian(mu, P))
 
         self.edges.append(self._anchor)

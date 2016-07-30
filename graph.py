@@ -5,7 +5,7 @@ from scipy.sparse import dok_matrix
 from mmath import *
 
 import pyximport; pyximport.install()
-from perfx import xyt_residual, XYTConstraint_jacobians
+from perfx import XYTConstraint_residual, XYTConstraint_jacobians
 
 
 
@@ -59,13 +59,7 @@ class XYTConstraint(object):
         else:
             stateA, stateB = aggregate_state[0:3], aggregate_state[3:6]
 
-        return xyt_residual(self._gaussian.mu, stateA, stateB)
-
-        current_xyt = xyt_inv_mult(stateA, stateB)
-        observed_xyt = self._gaussian.mu
-        r = observed_xyt - current_xyt
-        r[2] = rotate_angle_towards_zero(r[2])
-        return r
+        return XYTConstraint_residual(self._gaussian.mu, stateA, stateB)
 
     def chi2(self):
         current_xyt = xyt_inv_mult(self._vx[0].state, self._vx[1].state)

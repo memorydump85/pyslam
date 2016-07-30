@@ -28,6 +28,7 @@ class SparseCholeskySolver(object):
         self._sym_decomp_W = None
         self._sym_decomp_JtWJ = None
 
+
     def _get_state_update(self):
         GSTATE_LEN = len(self._graph.state)
         edges = self._graph.edges
@@ -73,10 +74,6 @@ class SparseCholeskySolver(object):
 
     def solve(self, verbose=False, tol=1e-3, maxiter=1000, callback=None):
         for iter_ in xrange(maxiter):
-            # import matplotlib.pyplot as plt
-            # plt.plot(self._graph.state[::3], self._graph.state[1::3], 'b-')
-            # plt.plot(self._graph.state[::3], self._graph.state[1::3], 'k.')
-            # plt.show()
             delta = self._get_state_update()
             print np.abs(delta).max()
             if np.abs(delta).max() < tol:
@@ -106,10 +103,10 @@ def main():
     solver = SparseCholeskySolver(g)
     solver.solve(maxiter=30)
 
-    import matplotlib.pyplot as plt
-    plt.plot(g.state[::3], g.state[1::3], 'b-')
-    plt.plot(g.state[::3], g.state[1::3], 'k.')
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.plot(g.state[::3], g.state[1::3], 'b-')
+    # plt.plot(g.state[::3], g.state[1::3], 'k.')
+    # plt.show()
 
 if __name__ == '__main__':
     main()

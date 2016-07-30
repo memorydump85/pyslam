@@ -6,7 +6,7 @@ from libc.math cimport sin, cos, fabs, M_PI
 
 
 
-cdef inline double _towards_zero(double t):
+cdef inline double _cycle_2PI_towards_zero(double t):
     """
     Return the closest to zero amongst `t`, `t+2*PI`, `t-2*PI`
     """
@@ -19,7 +19,7 @@ cdef inline double _towards_zero(double t):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef xyt_residual(
+cpdef XYTConstraint_residual(
         np.ndarray[np.float64_t, ndim=1] observed,
         np.ndarray[np.float64_t, ndim=1] xyt_a,
         np.ndarray[np.float64_t, ndim=1] xyt_b ):
@@ -39,11 +39,13 @@ cpdef xyt_residual(
              observed[1] - ainvb[1],
              observed[2] - ainvb[2] ]
 
-    r[2] = _towards_zero(r[2])
+    r[2] = _cycle_2PI_towards_zero(r[2])
 
     return np.array(r)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef XYTConstraint_jacobians(
         np.ndarray[np.float64_t, ndim=1] xyt_a,
         np.ndarray[np.float64_t, ndim=1] xyt_b ):

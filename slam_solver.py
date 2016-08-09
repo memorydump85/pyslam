@@ -3,7 +3,25 @@ import numpy as np
 import scipy.sparse as sp
 from scikits.sparse.cholmod import analyze, analyze_AAt
 
-from graphio import load_graph
+from graphio import load_graph, render_graph_html
+
+
+
+#
+# Some specializations for performance
+
+def _hstack2d(arr_collection):
+    """ faster than `np.hstack` because it avoids calling `np.atleast1d` """
+    return np.concatenate(arr_collection, axis=1)
+
+def _hstack1d(arr_collection):
+    """ faster than `np.hstack` because it avoids calling `np.atleast1d` """
+    return np.concatenate(arr_collection, axis=0)
+
+class coo_matrix_x(sp.coo_matrix):
+    """ A COO sparse matrix that assumes that there are no duplicate entries """
+    def sum_duplicates(self):
+        pass
 
 
 #--------------------------------------
@@ -40,18 +58,29 @@ class SparseCholeskySolver(object):
         residual_lengths = [ len(r) for r in residuals ]
         row_offsets = [0,] + np.cumsum(residual_lengths).tolist()
 
-        def hstack(arr_collection):
-            return np.concatenate(arr_collection, axis=1)
-
-        i,j,v = hstack([ e.jacobian(roff=r) for r, e in zip(row_offsets, edges) ])
-        J = sp.coo_matrix((v, (i,j)))
+        i,j,v = _hstack2d([ e.jacobian(roff=r) for r, e in zip(row_offsets, edges) ])
+        J = coo_matrix_x((v, (i,j)))
 
         Jt = J.T.tocsc()
         J  = J.tocsc()
 
+        # #---- experimental code ----
+
+        # from scipy.linalg import lu
+        # J_dense = J.todense()
+        # P, L, U = lu(J_dense)
+
+        # from matplotlib import pyplot as plt
+        # h = np.linalg.norm(L, axis=1)
+        # plt.style.use('ggplot')
+        # plt.hist(h, bins=500, normed=1)
+        # plt.show()
+
+        # #---- experimental code ----
+
         # Decompose W such that W = U * U.T
-        i,j,v = hstack([ e.uncertainty(r,r) for r, e in zip(row_offsets, edges) ])
-        W = sp.coo_matrix((v, (i, j))).tocsc()
+        i,j,v = _hstack2d([ e.uncertainty(r,r) for r, e in zip(row_offsets, edges) ])
+        W = coo_matrix_x((v, (i, j))).tocsc()
         if self._sym_decomp_W is None:
             self._sym_decomp_W = analyze(W, mode='auto')
 
@@ -66,13 +95,13 @@ class SparseCholeskySolver(object):
 
         chol_decomp_JtWJ = self._sym_decomp_JtWJ.cholesky_AAt(JtU)
 
-        r = np.concatenate(residuals, axis=0)
+        r = _hstack1d(residuals)
         b = Jt.dot(W.dot(r))
         x = chol_decomp_JtWJ.solve_A(b)
         return x
 
 
-    def solve(self, verbose=False, tol=1e-3, maxiter=1000, callback=None):
+    def solve(self, verbose=False, tol=1e-8, maxiter=1000, callback=None):
         for iter_ in xrange(maxiter):
             delta = self._get_state_update()
             print np.abs(delta).max()
@@ -90,23 +119,10 @@ def main():
 
     print 'graph has %d vertices, %d edges' % ( len(g.vertices), len(g.edges) )
 
-    # for e in g.edges:
-    #     print '--------------'
-    #     for J in e.jacobian(len(g.state)):
-    #         print J
-    #     print 'W'
-    #     print e.uncertainty()
-    #     print 'R'
-    #     print e.residual()
-    #     print '--------------\n'
-
     solver = SparseCholeskySolver(g)
-    solver.solve(maxiter=30)
+    solver.solve(maxiter=180)
 
-    # import matplotlib.pyplot as plt
-    # plt.plot(g.state[::3], g.state[1::3], 'b-')
-    # plt.plot(g.state[::3], g.state[1::3], 'k.')
-    # plt.show()
+    render_graph_html(g, '/tmp/graph.html')
 
 if __name__ == '__main__':
     main()

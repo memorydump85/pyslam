@@ -69,7 +69,7 @@ class XYTConstraint(object):
         off = np.array([ roff, coff, 0.]).reshape((3, 1))
         return self._Sigma_ijv + off
 
-    def jacobian(self, roff=0, eps=1e-5,):
+    def jacobian(self, roff=0, eps=1e-5):
         """
         Compute the jacobian matrix of the residual error function evaluated at
         the current states of the connected vertices.

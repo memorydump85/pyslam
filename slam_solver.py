@@ -28,7 +28,7 @@ class coo_matrix_x(sp.coo_matrix):
 class SparseCholeskySolver(object):
 #--------------------------------------
     """
-    Solve a graph for optimal vertex values that satisfy the edge constraints,
+    Solve a graph for optimal vertex values that satisfy the edge constraints
     using an iterated least squares solver. Each intermediate least squares
     solution is computed efficiently using a sparse cholesky decomposition.
 
@@ -48,7 +48,6 @@ class SparseCholeskySolver(object):
 
 
     def _get_state_update(self):
-        GSTATE_LEN = len(self._graph.state)
         edges = self._graph.edges
 
         residuals = [ e.residual() for e in edges ]
@@ -62,7 +61,7 @@ class SparseCholeskySolver(object):
         J = coo_matrix_x((v, (i,j)))
 
         Jt = J.T.tocsc()
-        J  = J.tocsc()
+        J = J.tocsc()
 
         # #---- experimental code ----
 

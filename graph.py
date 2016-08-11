@@ -1,6 +1,4 @@
 import numpy as np
-from math import sin, cos
-from scipy.sparse import dok_matrix
 
 from mmath import *
 

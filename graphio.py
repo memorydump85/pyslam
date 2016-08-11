@@ -1,4 +1,5 @@
 import numpy as np
+import textwrap
 
 from graph import Graph, VertexXYT, XYTConstraint
 from mmath import MultiVariateGaussian
@@ -164,7 +165,6 @@ def load_graph(filename):
             '%s". Valid extensions are ".g2o" ".toro" and ".april"' % filename)
 
 
-import textwrap
 _interactive_svg_doc = textwrap.dedent(
 """\
     <!DOCTYPE html>
@@ -244,8 +244,21 @@ _interactive_svg_doc = textwrap.dedent(
 
 
 def render_graph_html(graph, filename=None):
-    vertex_xyt = lambda v: [ v.state[0]*10, v.state[1]*10, np.degrees(v.state[2]) ]
-    edge_coords = lambda e: [ e._vx[0].state[0]*10, e._vx[0].state[1]*10, e._vx[1].state[0]*10, e._vx[1].state[1]*10 ]
+    """
+    Make a SVG rendering of `graph` and embed it in a .html file.
+    The html file uses javascript to enable zooming and panning the SVG.
+
+    Parameters:
+    -----------
+        `filename`: path of the created .html file
+            If `filename` is `None`, return the generated html as a string.
+    """
+    def vertex_xyt(v):
+        return [ v.state[0]*10, v.state[1]*10, np.degrees(v.state[2]) ]
+
+    def edge_coords(e):
+        return [ e._vx[0].state[0]*10, e._vx[0].state[1]*10,
+                  e._vx[1].state[0]*10, e._vx[1].state[1]*10 ]
 
     doc = _interactive_svg_doc % (
             [ vertex_xyt(v) for v in graph.vertices if isinstance(v, VertexXYT) ],

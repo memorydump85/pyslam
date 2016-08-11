@@ -35,13 +35,15 @@ def numerical_jacobian(f, x0, eps=1e-5):
     Return value
     ------------
         Returns an `M x N` matrix where
-            `M`
+            `M` = `len(f(x0))`
+            `N` = `len(x0)`
     """
     f_x0 = f(x0)
     I_eps = np.eye(len(x0)) * eps
 
-    # vector with just one position set to eps
-    one_hot_delta = lambda pos: I_eps[pos]
+    def one_hot_delta(pos):
+        """ vector with just one position set to eps """
+        return I_eps[pos]
 
     def partial_derivative(nth):
         d = one_hot_delta(nth)

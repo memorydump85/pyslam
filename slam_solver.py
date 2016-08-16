@@ -88,19 +88,19 @@ class SparseCholeskySolver(object):
 
 
     def solve(self, verbose=False, tol=1e-6, maxiter=1000, callback=None):
-        current_stats = None
+        current_stats = self._graph.get_stats()
 
         for iter_ in xrange(maxiter):
+            print '  chi2: %.6f    chi2 normalized: %.6f' % current_stats[:2]
+
             delta = self._get_state_update()
             self._graph.state -= delta
 
             new_stats = self._graph.get_stats()
-            if ( current_stats is not None and
-                 abs(new_stats.chi2_N - current_stats.chi2_N) < tol ):
+            if abs(new_stats.chi2_N - current_stats.chi2_N) < tol:
                 break
 
             current_stats = new_stats
-            print current_stats
 
 
 def main():
@@ -108,9 +108,6 @@ def main():
 
     g = load_graph(sys.argv[1] if len(sys.argv) > 1 else 'datasets/MITb.g2o')
     print 'graph has %d vertices, %d edges' % ( len(g.vertices), len(g.edges) )
-
-    # from mmath import xyt_inv_mult
-    # print [ xyt_inv_mult(e._vx[0].state, e._vx[1].state) for e in g.edges ]
 
     g.anchor_first_vertex()
 

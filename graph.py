@@ -5,7 +5,7 @@ from mmath import *
 
 import pyximport; pyximport.install()
 from perfx import XYTConstraint_residual, XYTConstraint_jacobians
-from perfx import cycle_2PI_towards_zero
+from perfx import normalize_angle_range
 
 
 
@@ -103,7 +103,7 @@ class AnchorConstraint(object):
 
     def residual(self, aggregate_state=None):
         r = self._gaussian.mu - self._vx[0].state
-        r[2] = cycle_2PI_towards_zero(r[2])
+        r[2] = normalize_angle_range(r[2])
         return r
 
     def chi2(self):
@@ -118,11 +118,11 @@ class AnchorConstraint(object):
         Compute the jacobian matrix of the residual error function
         evaluated at the current states of the connected vertices.
 
-        Returns a (dok format) sparse matrix since the jacobian of an
-        edge constraint is sparse. The `graph_state_length` parameter is
-        required to fix the column dimension of this sparse matrix.
-        Thus, the sparse matrix has `graph_state_length` columns and
-        `len(self.residual())` rows.
+        returns the sparse Jacobian matrix entries in triplet format
+        (i,j,v). The row index of the entries is offset by `roff`.
+
+        It is useful to specify `roff` when this Jacobian matrix is
+        computed as a sub-matrix of the graph Jacobian.
         """
         if self._jacobian_ijv_cache is None:
             J = -np.eye(3)
@@ -152,15 +152,19 @@ class Graph(object):
             v._graph_state_ndx = i
 
     def anchor_first_vertex(self):
-        v0 = self.vertices[0]
+        if hasattr(self, '_anchor') == False:
+            v0 = self.vertices[0]
 
-        mu = v0.state.copy()
-        P = 1000. * np.eye(len(mu))
-        self._anchor = AnchorConstraint(v0, MultiVariateGaussian(mu, P))
+            mu = v0.state.copy()
+            P = 1000. * np.eye(len(mu))
+            self._anchor = AnchorConstraint(v0, MultiVariateGaussian(mu, P))
 
-        self.edges.append(self._anchor)
+            self.edges.append(self._anchor)
 
     def get_stats(self):
-        DOF = sum(e._DOF for e in self.edges) - len(self.state)
-        chi2 = sum(e.chi2() for e in self.edges)
+        original_edges = [ e for e in self.edges if e is not self._anchor ]
+
+        DOF = sum(e._DOF for e in original_edges) - len(self.state)
+        chi2 = sum(e.chi2() for e in original_edges)
+
         return GraphStats(chi2, chi2/DOF, DOF)

@@ -2,19 +2,16 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
-from libc.math cimport sin, cos, fabs, M_PI
+from libc.math cimport sin, cos, fmod, M_PI
 
 
 
-cpdef inline double cycle_2PI_towards_zero(double t):
-    """
-    Return the closest to zero amongst `t`, `t+2*PI`, `t-2*PI`
-    """
-    cdef double _2PI = 2*M_PI
-    cdef double best
-    best = t if (fabs(t) < fabs(t + _2PI)) else (t + _2PI)
-    best = best if (fabs(best) < fabs(t - _2PI)) else (t - _2PI)
-    return best
+cpdef inline double normalize_angle_range(double t):
+    """ Normalize angle to be in [-PI, +PI] """
+    if t > 0:
+        return fmod(t+M_PI, 2.0*M_PI) - M_PI
+    else:
+        return fmod(t-M_PI, 2.0*M_PI) + M_PI
 
 
 @cython.boundscheck(False)
@@ -39,7 +36,7 @@ cpdef XYTConstraint_residual(
              observed[1] - ainvb[1],
              observed[2] - ainvb[2] ]
 
-    r[2] = cycle_2PI_towards_zero(r[2])
+    r[2] = normalize_angle_range(r[2])
 
     return np.array(r)
 

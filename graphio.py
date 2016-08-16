@@ -183,9 +183,14 @@ _interactive_svg_doc = textwrap.dedent(
         stroke-width: .1px;
     }
 
-    line {
-        stroke: rgba(128, 0, 0, .5);
-        stroke-width: .5px;
+    line.odom {
+        stroke: rgba(0, 0, 0, .25);
+        stroke-width: .05px;
+    }
+
+    line.loop {
+        stroke: rgba(192, 0, 0, .5);
+        stroke-width: .1px;
     }
 
     body {
@@ -205,7 +210,9 @@ _interactive_svg_doc = textwrap.dedent(
 
     var vertices = %s;
 
-    var edges = %s;
+    var edges_odom = %s;
+
+    var edges_loop = %s;
 
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -221,9 +228,19 @@ _interactive_svg_doc = textwrap.dedent(
         .attr("width", width)
         .attr("height", height);
 
-    svg.selectAll("line")
-        .data(edges)
+    svg.selectAll("line.odom")
+        .data(edges_odom)
       .enter().append("line")
+        .classed("odom", true)
+        .attr("x1", function(d) { return d[0]; })
+        .attr("y1", function(d) { return d[1]; })
+        .attr("x2", function(d) { return d[2]; })
+        .attr("y2", function(d) { return d[3]; });
+
+    svg.selectAll("line.loop")
+        .data(edges_loop)
+      .enter().append("line")
+        .classed("loop", true)
         .attr("x1", function(d) { return d[0]; })
         .attr("y1", function(d) { return d[1]; })
         .attr("x2", function(d) { return d[2]; })
@@ -233,7 +250,9 @@ _interactive_svg_doc = textwrap.dedent(
         .data(vertices)
       .enter().append("polygon")
         .attr("points", "-.5,.5 -.5,-.5, 1,0")
-        .attr("transform", function(d) { return "translate("+d[0]+","+d[1]+") rotate("+d[2]+")"; });
+        .attr("transform", function(d) { return "translate("+d[0]+","+d[1]+") rotate("+d[2]+")"; })
+      .append("svg:title")
+        .text(function(d, i) { return "" + i; });
 
     function zoom() {
       svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
@@ -245,14 +264,28 @@ _interactive_svg_doc = textwrap.dedent(
 
 def render_graph_html(graph, filename=None):
     """
-    Make a SVG rendering of `graph` and embed it in a .html file.
-    The html file uses javascript to enable zooming and panning the SVG.
+    Make a SVG rendering of `graph` and embed it in a .html file. The
+    html file uses javascript to zoom and pan the SVG.
 
     Parameters:
     -----------
         `filename`: path of the created .html file
-            If `filename` is `None`, return the generated html as a string.
+            If `filename` is `None`, return the generated html as a
+            string.
+
+    Returns:
+    --------
+        generated html content if the `filename` parameter is not
+        specified.
     """
+    _vertex_index_map = dict( (v, i) for i, v in enumerate(graph.vertices)  )
+    def ndx(v):
+        return _vertex_index_map[v]
+
+    xyt_constraints = [ e for e in graph.edges if isinstance(e, XYTConstraint) ]
+    odom_constraints = [ e for e in xyt_constraints if abs(ndx(e._vx[0]) - ndx(e._vx[1])) == 1 ]
+    loop_constraints = [ e for e in xyt_constraints if abs(ndx(e._vx[0]) - ndx(e._vx[1])) != 1 ]
+
     def vertex_xyt(v):
         return [ v.state[0]*10, v.state[1]*10, np.degrees(v.state[2]) ]
 
@@ -262,7 +295,8 @@ def render_graph_html(graph, filename=None):
 
     doc = _interactive_svg_doc % (
             [ vertex_xyt(v) for v in graph.vertices if isinstance(v, VertexXYT) ],
-            [ edge_coords(e) for e in graph.edges if isinstance(e, XYTConstraint) ]
+            [ edge_coords(e) for e in odom_constraints ],
+            [ edge_coords(e) for e in loop_constraints ]
         )
 
     if filename is None:

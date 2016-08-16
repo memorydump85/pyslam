@@ -28,9 +28,10 @@ class coo_matrix_x(sp.coo_matrix):
 class SparseCholeskySolver(object):
 #--------------------------------------
     """
-    Solve a graph for optimal vertex values that satisfy the edge constraints
-    using an iterated least squares solver. Each intermediate least squares
-    solution is computed efficiently using a sparse cholesky decomposition.
+    Solve a graph for optimal vertex values that satisfy the edge
+    constraints using an linearizing least squares solver. Each
+    intermediate least squares solution is computed efficiently using a
+    sparse cholesky decomposition.
 
     The state of this solver will be invalidated if the structure of the
     underlying graph changes. In such cases, where the structure of the
@@ -62,20 +63,6 @@ class SparseCholeskySolver(object):
 
         Jt = J.T.tocsc()
         J = J.tocsc()
-
-        # #---- experimental code ----
-
-        # from scipy.linalg import lu
-        # J_dense = J.todense()
-        # P, L, U = lu(J_dense)
-
-        # from matplotlib import pyplot as plt
-        # h = np.linalg.norm(L, axis=1)
-        # plt.style.use('ggplot')
-        # plt.hist(h, bins=500, normed=1)
-        # plt.show()
-
-        # #---- experimental code ----
 
         # Decompose W such that W = U * U.T
         i,j,v = _hstack2d([ e.uncertainty(r,r) for r, e in zip(row_offsets, edges) ])

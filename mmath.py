@@ -4,8 +4,8 @@ import numpy as np
 
 def xyt_inv_mult(a, b):
     """
-    This function computes `A.inv() * B` for two rigid body transforms `A`
-    and `B`.
+    This function computes `A.inv() * B` for two rigid body transforms
+    `A` and `B`.
 
     Parameters
     ----------
@@ -24,8 +24,8 @@ def xyt_inv_mult(a, b):
 
 def numerical_jacobian(f, x0, eps=1e-5):
     """
-    Compute jacobian via numerical differentiation. This implementation uses
-    forward differences.
+    Compute jacobian via numerical differentiation. This implementation
+    uses forward differences.
 
     Parameters
     ----------
@@ -34,9 +34,8 @@ def numerical_jacobian(f, x0, eps=1e-5):
 
     Return value
     ------------
-        Returns an `M x N` matrix where
-            `M` = `len(f(x0))`
-            `N` = `len(x0)`
+        Returns an `M x N` matrix where `M` = `len(f(x0))` `N` =
+        `len(x0)`
     """
     f_x0 = f(x0)
     I_eps = np.eye(len(x0)) * eps
@@ -77,9 +76,9 @@ def rotate_angle_towards_zero(theta):
 class MultiVariateGaussian(object):
 #--------------------------------------
     """
-    MultivariateGaussian specified with its mean `mu` and precision/information
-    matrix `P`. Alternatively, the precision matrix `P` is also the inverse of
-    the covariance matrix.
+    MultivariateGaussian specified with its mean `mu` and
+    precision/information matrix `P`. Alternatively, the precision
+    matrix `P` is the inverse of the covariance matrix.
     """
     def __init__(self, mu, P):
         self.mu = mu

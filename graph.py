@@ -26,12 +26,12 @@ class XYTConstraint(object):
     """
     Constrain the transformation between two `VertexXYT`s.
 
-    `xyt` is the rigidbody transformation `T`, between the vertices `v_out` and
-    `v_in`, expressed using its parameters of x: displacement, y: displacement
-    and theta: rotation
+    `xyt` is the rigidbody transformation `T`, between the vertices
+    `v_out` and `v_in`, expressed using its parameters of x:
+    displacement, y: displacement and theta: rotation
 
-    This constraint constrains the `xyt` between `v_out` and `v_in` to be
-    distributed according to a specified gaussian distribution.
+    This constraint constrains the `xyt` between `v_out` and `v_in` to
+    be distributed according to a specified gaussian distribution.
     """
     def __init__(self, v_out, v_in, gaussian):
         self._vx = [ v_out, v_in ]
@@ -69,14 +69,14 @@ class XYTConstraint(object):
 
     def jacobian(self, roff=0, eps=1e-5):
         """
-        Compute the jacobian matrix of the residual error function evaluated at
-        the current states of the connected vertices.
+        Compute the jacobian matrix of the residual error function
+        evaluated at the current states of the connected vertices.
 
-        Returns a (dok format) sparse matrix since the jacobian of an edge
-        constraint is sparse. The `graph_state_length` parameter is required to
-        fix the column dimension of this sparse matrix. Thus, the sparse matrix
-        has `graph_state_length` columns and `len(self.residual())` rows.
-        `
+        Returns a (dok format) sparse matrix since the jacobian of an
+        edge constraint is sparse. The `graph_state_length` parameter is
+        required to fix the column dimension of this sparse matrix.
+        Thus, the sparse matrix has `graph_state_length` columns and
+        `len(self.residual())` rows.
         """
         # xa, ya, ta = self._vx[0].state
         # xb, yb, tb = self._vx[1].state
@@ -117,10 +117,10 @@ class XYTConstraint(object):
 class AnchorConstraint(object):
 #--------------------------------------
     """
-    Anchors the `xyt` parameters of a vertex `v` to conform to a gaussian
-    distribution. The most common use of this edge type is to anchor the `xyt`
-    of the first node in a SLAM graph to a fixed value. This prevents the graph
-    solution from drifting arbitrarily.
+    Anchors the `xyt` parameters of a vertex `v` to conform to a
+    gaussian distribution. The most common use of this edge type is to
+    anchor the `xyt` of the first node in a SLAM graph to a fixed value.
+    This prevents the graph solution from drifting arbitrarily.
     """
     def __init__(self, v, gaussian):
         self._vx = v
@@ -152,14 +152,14 @@ class AnchorConstraint(object):
 
     def jacobian(self, roff=0, eps=1e-5):
         """
-        Compute the jacobian matrix of the residual error function evaluated at
-        the current states of the connected vertices.
+        Compute the jacobian matrix of the residual error function
+        evaluated at the current states of the connected vertices.
 
-        Returns a (dok format) sparse matrix since the jacobian of an edge
-        constraint is sparse. The `graph_state_length` parameter is required to
-        fix the column dimension of this sparse matrix. Thus, the sparse matrix
-        has `graph_state_length` columns and `len(self.residual())` rows.
-        `
+        Returns a (dok format) sparse matrix since the jacobian of an
+        edge constraint is sparse. The `graph_state_length` parameter is
+        required to fix the column dimension of this sparse matrix.
+        Thus, the sparse matrix has `graph_state_length` columns and
+        `len(self.residual())` rows.
         """
         if self._jacobian_ijv_cache is None:
             J = -np.eye(3)

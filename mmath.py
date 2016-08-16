@@ -66,12 +66,6 @@ def numerical_jacobian(f, x0, eps=1e-5):
     return np.array([ partial_derivative(i) for i in xrange(len(x0)) ]).T
 
 
-def rotate_angle_towards_zero(theta):
-    choices = [ theta, theta + 2*np.pi, theta - 2*np.pi ]
-    best_idx = np.abs(choices).argmin()
-    return choices[best_idx]
-
-
 #--------------------------------------
 class MultiVariateGaussian(object):
 #--------------------------------------

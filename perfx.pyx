@@ -6,7 +6,7 @@ from libc.math cimport sin, cos, fabs, M_PI
 
 
 
-cdef inline double _cycle_2PI_towards_zero(double t):
+cpdef inline double cycle_2PI_towards_zero(double t):
     """
     Return the closest to zero amongst `t`, `t+2*PI`, `t-2*PI`
     """
@@ -39,7 +39,7 @@ cpdef XYTConstraint_residual(
              observed[1] - ainvb[1],
              observed[2] - ainvb[2] ]
 
-    r[2] = _cycle_2PI_towards_zero(r[2])
+    r[2] = cycle_2PI_towards_zero(r[2])
 
     return np.array(r)
 

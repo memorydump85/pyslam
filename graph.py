@@ -1,9 +1,11 @@
 import numpy as np
+from collections import namedtuple
 
 from mmath import *
 
 import pyximport; pyximport.install()
 from perfx import XYTConstraint_residual, XYTConstraint_jacobians
+from perfx import cycle_2PI_towards_zero
 
 
 
@@ -33,73 +35,42 @@ class XYTConstraint(object):
     This constraint constrains the `xyt` between `v_out` and `v_in` to
     be distributed according to a specified gaussian distribution.
     """
+    _DOF = 3
+
     def __init__(self, v_out, v_in, gaussian):
         self._vx = [ v_out, v_in ]
         self._gaussian = gaussian
         self._Sigma_ijv = _matrix_as_ijv(np.linalg.inv(gaussian.P))
         self._jacobian_ijv_cache = None
 
-    def aggregate_vertex_state(self):
+    def residual(self):
         """
-        Stacked state of all connected vertices
+        Compute the difference in transformation implied by this edge
+        from `self._gaussian.mu`.
         """
-        return np.concatenate([ v.state for v in self._vx ])
-
-    def residual(self, aggregate_state=None):
-        """
-        Compute the difference in transformation from `self._gaussian.mu` given
-        the `aggregate_state` of vertices. If `aggregate_state` is not
-        specified, the current aggregate state from
-        `self.aggregate_vertex_state()` is used.
-        """
-        if aggregate_state is None:
-            stateA, stateB = self._vx[0].state, self._vx[1].state
-        else:
-            stateA, stateB = aggregate_state[0:3], aggregate_state[3:6]
-
+        stateA, stateB = self._vx[0].state, self._vx[1].state
         return XYTConstraint_residual(self._gaussian.mu, stateA, stateB)
 
     def chi2(self):
-        current_xyt = xyt_inv_mult(self._vx[0].state, self._vx[1].state)
-        return self._gaussian.chi2(current_xyt)
+        z = self.residual()
+        return reduce(np.dot, [ z.T, self._gaussian.P, z ])
 
     def uncertainty(self, roff=0, coff=0):
         off = np.array([ roff, coff, 0.]).reshape((3, 1))
         return self._Sigma_ijv + off
 
-    def jacobian(self, roff=0, eps=1e-5):
+    def jacobian(self, roff=0):
         """
         Compute the jacobian matrix of the residual error function
         evaluated at the current states of the connected vertices.
 
-        Returns a (dok format) sparse matrix since the jacobian of an
-        edge constraint is sparse. The `graph_state_length` parameter is
-        required to fix the column dimension of this sparse matrix.
-        Thus, the sparse matrix has `graph_state_length` columns and
-        `len(self.residual())` rows.
+        returns the sparse Jacobian matrix entries in triplet format
+        (i,j,v). The row index of the entries is offset by `roff`.
+
+        It is useful to specify `roff` when this Jacobian matrix is
+        computed as a sub-matrix of the graph Jacobian.
         """
-        # xa, ya, ta = self._vx[0].state
-        # xb, yb, tb = self._vx[1].state
-        # sa, ca = sin(ta), cos(ta)
-
-        # Ja = [ ca,  sa,  sa*(xb-xa)-ca*(yb-ya),
-        #       -sa,  ca,  ca*(xb-xa)+sa*(yb-ya),
-        #        0.,   0.,                    1. ]
-
-        # Jb = [ -ca,  -sa,  0.,
-        #         sa,  -ca,  0.,
-        #         0.,   0., -1. ]
-
         Ja, Jb = XYTConstraint_jacobians(self._vx[0].state, self._vx[1].state)
-
-        # J = np.vstack(( Ja, Jb ))
-        # J = np.array([
-        #         [ ca,  sa,  sa*(xb-xa)-ca*(yb-ya),  -ca,  -sa,  0.],
-        #         [-sa,  ca,  ca*(xb-xa)+sa*(yb-ya),   sa,  -ca,  0.],
-        #         [ 0.,   0.,                    1.,   0.,   0., -1.]])
-
-        # Above is the analytical version of:
-        #   J = numerical_jacobian(self.residual, x0=self.aggregate_vertex_state(), eps=eps)
 
         if self._jacobian_ijv_cache is None:
             ndx0 = self._vx[0]._graph_state_ndx
@@ -122,29 +93,21 @@ class AnchorConstraint(object):
     anchor the `xyt` of the first node in a SLAM graph to a fixed value.
     This prevents the graph solution from drifting arbitrarily.
     """
+    _DOF = 3
+
     def __init__(self, v, gaussian):
-        self._vx = v
+        self._vx = [v]
         self._gaussian = gaussian
         self._Sigma_ijv = _matrix_as_ijv(np.linalg.inv(gaussian.P))
         self._jacobian_ijv_cache = None
 
-    def aggregate_vertex_state(self):
-        """
-        Stacked state of all connected vertices. This type of edge has only one
-        vertex.
-        """
-        return self._vx.state
-
     def residual(self, aggregate_state=None):
-        if aggregate_state is None:
-            aggregate_state = self.aggregate_vertex_state()
-
-        r = self._gaussian.mu - aggregate_state
-        r[2] = rotate_angle_towards_zero(r[2])
+        r = self._gaussian.mu - self._vx[0].state
+        r[2] = cycle_2PI_towards_zero(r[2])
         return r
 
     def chi2(self):
-        return self._gaussian.chi2(self._vx.state)
+        return self._gaussian.chi2(self._vx[0].state)
 
     def uncertainty(self, roff=0, coff=0):
         off = np.array([ roff, coff, 0.]).reshape((3, 1))
@@ -163,13 +126,14 @@ class AnchorConstraint(object):
         """
         if self._jacobian_ijv_cache is None:
             J = -np.eye(3)
-            # Above is the analytical version of:
-            #   J = numerical_jacobian(self.residual, x0=self.aggregate_vertex_state(), eps=eps)
-
-            ndx = self._vx._graph_state_ndx
+            ndx = self._vx[0]._graph_state_ndx
             self._jacobian_ijv_cache = _matrix_as_ijv(J, i0=roff, j0=ndx)
 
         return self._jacobian_ijv_cache
+
+
+GraphStats = namedtuple('GraphStats',
+                ['chi2', 'chi2_N', 'DOF'])
 
 
 #--------------------------------------
@@ -195,3 +159,8 @@ class Graph(object):
         self._anchor = AnchorConstraint(v0, MultiVariateGaussian(mu, P))
 
         self.edges.append(self._anchor)
+
+    def get_stats(self):
+        DOF = sum(e._DOF for e in self.edges) - len(self.state)
+        chi2 = sum(e.chi2() for e in self.edges)
+        return GraphStats(chi2, chi2/DOF, DOF)

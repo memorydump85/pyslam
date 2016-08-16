@@ -87,23 +87,32 @@ class SparseCholeskySolver(object):
         return x
 
 
-    def solve(self, verbose=False, tol=1e-8, maxiter=1000, callback=None):
+    def solve(self, verbose=False, tol=1e-6, maxiter=1000, callback=None):
+        current_stats = None
+
         for iter_ in xrange(maxiter):
             delta = self._get_state_update()
-            print np.abs(delta).max()
-            if np.abs(delta).max() < tol:
-                return
-            else:
-                self._graph.state -= delta
+            self._graph.state -= delta
+
+            new_stats = self._graph.get_stats()
+            if ( current_stats is not None and
+                 abs(new_stats.chi2_N - current_stats.chi2_N) < tol ):
+                break
+
+            current_stats = new_stats
+            print current_stats
 
 
 def main():
     np.set_printoptions(precision=4, suppress=True)
 
     g = load_graph(sys.argv[1] if len(sys.argv) > 1 else 'datasets/MITb.g2o')
-    g.anchor_first_vertex()
-
     print 'graph has %d vertices, %d edges' % ( len(g.vertices), len(g.edges) )
+
+    # from mmath import xyt_inv_mult
+    # print [ xyt_inv_mult(e._vx[0].state, e._vx[1].state) for e in g.edges ]
+
+    g.anchor_first_vertex()
 
     solver = SparseCholeskySolver(g)
     solver.solve(maxiter=180)

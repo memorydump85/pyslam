@@ -278,7 +278,7 @@ def render_graph_html(graph, filename=None):
         generated html content if the `filename` parameter is not
         specified.
     """
-    _vertex_index_map = dict( (v, i) for i, v in enumerate(graph.vertices)  )
+    _vertex_index_map = { v: i for i, v in enumerate(graph.vertices) }
     def ndx(v):
         return _vertex_index_map[v]
 

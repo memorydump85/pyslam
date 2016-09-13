@@ -1,5 +1,6 @@
-import numpy as np
 from collections import namedtuple
+import numpy as np
+import scipy.sparse as sp
 
 from mmath import *
 
@@ -136,6 +137,23 @@ GraphStats = namedtuple('GraphStats',
                 ['chi2', 'chi2_N', 'DOF'])
 
 
+#
+# Some specializations for performance
+
+def _hstack2d(arr_collection):
+    """ faster than `np.hstack` because it avoids calling `np.atleast1d` """
+    return np.concatenate(arr_collection, axis=1)
+
+def _hstack1d(arr_collection):
+    """ faster than `np.hstack` because it avoids calling `np.atleast1d` """
+    return np.concatenate(arr_collection, axis=0)
+
+class coo_matrix_x(sp.coo_matrix):
+    """ A COO sparse matrix that assumes that there are no duplicate entries """
+    def sum_duplicates(self):
+        pass
+
+
 #--------------------------------------
 class Graph(object):
 #--------------------------------------
@@ -168,3 +186,43 @@ class Graph(object):
         chi2 = sum(e.chi2() for e in original_edges)
 
         return GraphStats(chi2, chi2/DOF, DOF)
+
+    def get_linearization(self):
+        """
+        Linearize the non-linear constraints in this graph, at its
+        current state `self.state`, to produce an approximating linear
+        system.
+
+        Returns:
+        --------
+            `W`:
+                Weighting matrix for the linear constraints
+            `J`:
+                Jacobian of the system at `self.state`.
+            `r`:
+                vector of stacked residuals
+
+        The linear system `W J = W r` captures an approximate linear
+        model of the graph constraints that is valid near the current
+        state of the graph.
+        """
+        edges = self.edges
+
+        residuals = [ e.residual() for e in edges ]
+
+        # For each edge jacobian, compute the its row index in the
+        # graph jacobian `J`
+        residual_lengths = [ len(r) for r in residuals ]
+        row_offsets = [0,] + np.cumsum(residual_lengths).tolist()
+
+        # Stack edge jacobians to produce system jacobian
+        i,j,v = _hstack2d([ e.jacobian(roff=r) for r, e in zip(row_offsets, edges) ])
+        J = coo_matrix_x((v, (i,j)))
+
+        # Stack edge weights to produce system weights
+        i,j,v = _hstack2d([ e.uncertainty(r,r) for r, e in zip(row_offsets, edges) ])
+        W = coo_matrix_x((v, (i, j))).tocsc()
+
+        r = _hstack1d(residuals)
+
+        return W, J, r

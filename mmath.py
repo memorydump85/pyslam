@@ -4,7 +4,7 @@ import numpy as np
 
 def xyt_inv_mult(a, b):
     """
-    This function computes `A.inv() * B` for two rigid body transforms
+    compute `A.inv() * B` for two rigid body transforms
     `A` and `B`.
 
     Parameters
@@ -20,6 +20,26 @@ def xyt_inv_mult(a, b):
     ca, sa = np.cos(theta), np.sin(theta)
     dx, dy, dt = b - a
     return np.array([ ca*dx + sa*dy, -sa*dx + ca*dy, dt ])
+
+
+def xyt_mult(a, b):
+    """
+    compute `A * B` for two rigid body transforms `A` and `B`.
+
+    Parameters
+    ----------
+        `a`: Rigid body transform `A` expressed as an xyt array
+        `b`: Rigid body transform `B` expressed as an xyt array
+
+    Returns
+    -------
+        an xyt array representing the result of `A * B`
+    """
+    sa, ca = np.sin(a[2]), np.cos(a[2]);
+
+    return np.array([ ca*b[0] - sa*b[1] + a[0],
+                      sa*b[0] + ca*b[1] + a[1],
+                      a[2] + b[2] ])
 
 
 def numerical_jacobian(f, x0, eps=1e-5):

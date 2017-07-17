@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import scipy.sparse as sp
-from scikits.sparse.cholmod import analyze, analyze_AAt
+from sksparse.cholmod import analyze, analyze_AAt
 
 from graphio import load_graph, render_graph_html
 

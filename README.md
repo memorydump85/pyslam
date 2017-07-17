@@ -1,5 +1,5 @@
 # pyslam
-Basic SLAM solver implemented in python
+Basic Sparse-Cholesky Graph SLAM solver implemented in python
 
 Requirements
 ------------

@@ -34,7 +34,7 @@ class XYTConstraint(object):
     displacement, y: displacement and theta: rotation
 
     This constraint constrains the `xyt` between `v_out` and `v_in` to
-    be distributed according to a specified gaussian distribution.
+    be distributed according to the specified gaussian distribution.
     """
     _DOF = 3
 
@@ -189,7 +189,7 @@ class Graph(object):
 
     def get_linearization(self):
         """
-        Linearize the non-linear constraints in this graph, at its
+        Linearizes the non-linear constraints in this graph, at its
         current state `self.state`, to produce an approximating linear
         system.
 
@@ -202,7 +202,7 @@ class Graph(object):
             `r`:
                 vector of stacked residuals
 
-        The linear system `W J = W r` captures an approximate linear
+        The linear system `W J x = W r` captures an approximate linear
         model of the graph constraints that is valid near the current
         state of the graph.
         """

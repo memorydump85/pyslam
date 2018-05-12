@@ -1,3 +1,4 @@
+from six.moves import reduce
 import numpy as np
 
 

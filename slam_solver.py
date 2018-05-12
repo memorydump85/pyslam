@@ -1,3 +1,6 @@
+from __future__ import print_function
+from past.builtins import xrange
+
 import sys
 import numpy as np
 import scipy.sparse as sp
@@ -34,10 +37,6 @@ class SparseCholeskySolver(object):
     def _get_state_update(self):
         W, J, r = self._graph.get_linearization()
 
-        edges = self._graph.edges
-
-        residuals = [ e.residual() for e in edges ]
-
         Jt = J.T.tocsc()
         J = J.tocsc()
 
@@ -65,8 +64,8 @@ class SparseCholeskySolver(object):
         current_stats = self._graph.get_stats()
 
         for iter_ in xrange(maxiter):
-            print '[iter %d]' % iter_
-            print '    chi2: %.6f    chi2 normalized: %.6f' % current_stats[:2]
+            print('[iter %d]' % iter_)
+            print('    chi2: %.6f    chi2 normalized: %.6f' % current_stats[:2])
 
             delta = self._get_state_update()
             self._graph.state -= delta
@@ -82,7 +81,7 @@ def main():
     np.set_printoptions(precision=4, suppress=True)
 
     g = load_graph(sys.argv[1] if len(sys.argv) > 1 else 'datasets/M3500a.g2o')
-    print 'graph has %d vertices, %d edges' % ( len(g.vertices), len(g.edges) )
+    print('graph has %d vertices, %d edges' % ( len(g.vertices), len(g.edges) ))
 
     g.anchor_first_vertex()
 

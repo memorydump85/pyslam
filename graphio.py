@@ -1,5 +1,6 @@
 import numpy as np
 import textwrap
+from future.utils import listvalues
 
 from graph import Graph, VertexXYT, XYTConstraint
 from mmath import MultiVariateGaussian
@@ -42,7 +43,7 @@ def load_graph_g2o(filename):
                 msg = "Unknown edge or vertex type %s in line %d" % (d[0], linenum)
                 raise GraphIOError(msg)
 
-    return Graph(vertices.values(), edges)
+    return Graph(listvalues(vertices), edges)
 
 
 def load_graph_toro(filename):
@@ -77,7 +78,7 @@ def load_graph_toro(filename):
                 msg = "Unknown edge or vertex type %s in line %d" % (d[0], linenum)
                 raise Exception(msg)
 
-    return Graph(vertices.values(), edges)
+    return Graph(listvalues(vertices), edges)
 
 
 def load_graph_april(filename):

@@ -11,6 +11,6 @@ Requirements
 
 On Ubuntu 16.04:
 ```bash
-sudo apt-get install libsuitesparse-dev
-sudo -H pip install future numpy scipy cython scikit-sparse
+apt-get install libsuitesparse-dev
+pip install future numpy scipy cython scikit-sparse
 ```

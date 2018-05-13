@@ -250,7 +250,7 @@ _interactive_svg_doc = textwrap.dedent(
     svg.selectAll("polygon")
         .data(vertices)
       .enter().append("polygon")
-        .attr("points", "-.5,.5 -.5,-.5, 1,0")
+        .attr("points", "-1,1 -1,-1, 2,0")
         .attr("transform", function(d) { return "translate("+d[0]+","+d[1]+") rotate("+d[2]+")"; })
       .append("svg:title")
         .text(function(d, i) { return "" + i; });
